@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Submit Complaint - Whistleblower</title>
+</head>
+<body>
+  <h2>🕵️‍♂️ Anonymous Complaint Submission</h2>
+
+  <form id="complaintForm" enctype="multipart/form-data">
+    <input type="hidden" name="submitterWallet" id="wallet" />
+
+    <label>Pincode:</label><br />
+    <input type="text" name="pincode" required /><br /><br />
+
+    <label>Description:</label><br />
+    <textarea name="description" rows="4" required></textarea><br /><br />
+
+    <label>Upload Image/Video:</label><br />
+    <input type="file" name="media" accept="image/*,video/*" /><br /><br />
+
+    <button type="submit">🚀 Submit Complaint</button>
+  </form>
+
+  <p id="responseMessage" style="font-weight: bold; color: green;"></p>
+
+  <script>
+    async function connectWallet() {
+      if (typeof window.ethereum !== "undefined") {
+        try {
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          const wallet = accounts[0];
+          document.getElementById("wallet").value = wallet;
+          console.log("✅ Connected wallet:", wallet);
+        } catch (err) {
+          alert("Please allow wallet access to submit anonymously.");
+        }
+      } else {
+        alert("Please install MetaMask to submit a complaint.");
+      }
+    }
+
+    async function submitComplaint(event) {
+      event.preventDefault();
+      const form = document.getElementById('complaintForm');
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch('http://localhost:5000/api/complaint', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await res.json();
+        console.log("📦 Backend Response:", result);
+
+        if (result.complaintId) {
+          alert(`✅ Complaint submitted successfully!\n🆔 Complaint ID: ${result.complaintId}`);
+          document.getElementById('responseMessage').innerText = `Complaint ID: ${result.complaintId}`;
+          form.reset();
+        } else {
+          alert('❌ Failed to submit complaint.');
+          console.error(result);
+        }
+      } catch (err) {
+        console.log('⚠️ Error during submission:', err);
+        alert("❌ Network or server error. Please try again.");
+      }
+    }
+
+    window.onload = () => {
+      connectWallet();
+      document.getElementById('complaintForm').addEventListener('submit', submitComplaint);
+    };
+  </script>
+</body>
+</html>

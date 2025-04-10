@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard - Whistleblower</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+    }
+    .complaint {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      background-color: #f9f9f9;
+    }
+    .media img, .media video {
+      max-width: 200px;
+      margin: 10px 10px 0 0;
+      display: inline-block;
+    }
+    button {
+      padding: 8px 16px;
+      margin-top: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 Admin Dashboard</h1>
+  <div id="complaintList">Loading complaints...</div>
+
+  <script>
+    // Optional protection — redirect if not logged in as admin
+    if (localStorage.getItem('adminLoggedIn') !== 'true') {
+      window.location.href = 'adminLogin.html';
+    }
+
+    async function fetchComplaints() {
+      try {
+        const res = await fetch('http://localhost:5000/api/complaint/all');
+        const data = await res.json();
+
+        const list = document.getElementById('complaintList');
+        list.innerHTML = '';
+
+        if (!Array.isArray(data)) {
+          list.innerHTML = '<p>No complaints found.</p>';
+          return;
+        }
+
+        data.forEach(complaint => {
+          const div = document.createElement('div');
+          div.className = 'complaint';
+          div.innerHTML = `
+            <p><strong>ID:</strong> ${complaint.complaintId}</p>
+            <p><strong>Pincode:</strong> ${complaint.pincode}</p>
+            <p><strong>Description:</strong> ${complaint.description}</p>
+            <p><strong>Status:</strong> ${complaint.status === 'Resolved' ? '✅ Solved' : '🕒 Under Process'}</p>
+            <div class="media">
+              ${complaint.media.map(file => {
+                const ext = file.filename.split('.').pop();
+                if (['mp4', 'webm'].includes(ext)) {
+                  return `<video controls src="http://localhost:5000${file.path}"></video>`;
+                } else {
+                  return `<img src="http://localhost:5000${file.path}" alt="Media" />`;
+                }
+              }).join('')}
+            </div>
+            ${complaint.status === 'Pending' ? `
+              <button onclick="resolveComplaint('${complaint.complaintId}')">
+                ✅ Mark as Solved
+              </button>
+            ` : ''}
+          `;
+          list.appendChild(div);
+        });
+
+      } catch (error) {
+        console.error('❌ Error fetching complaints:', error);
+        document.getElementById('complaintList').innerHTML = '<p>Error loading complaints.</p>';
+      }
+    }
+
+    async function resolveComplaint(complaintId) {
+      try {
+        const res = await fetch('http://localhost:5000/api/admin/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            complaintId,
+            rewardAmount: "0.01" // Fixed reward amount
+          })
+        });
+
+        const result = await res.json();
+        alert("✅ Complaint Marked as Solved");
+        fetchComplaints();
+      } catch (err) {
+        alert('❌ Failed to resolve complaint.');
+        console.error(err);
+      }
+    }
+
+    fetchComplaints();
+  </script>
+</body>
+</html>

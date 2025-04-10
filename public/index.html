@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Whistleblower Portal</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+    form { border: 1px solid #ccc; padding: 20px; margin-bottom: 30px; border-radius: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin: 10px 0; }
+    button { padding: 10px 20px; background: #1a73e8; color: white; border: none; cursor: pointer; }
+    h2 { color: #333; }
+    #complaintMsg, #resolveMsg { font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🕵️ Whistleblower Anonymous Complaint</h1>
+
+  <form id="complaintForm" enctype="multipart/form-data">
+    <h2>Submit Complaint</h2>
+    <textarea name="description" placeholder="Description" required></textarea>
+    <input name="pincode" placeholder="Pincode" required />
+    <!-- Wallet address will be auto-inserted in JS -->
+    <input type="file" name="media" multiple accept="image/*,video/*" />
+    <button type="submit">Submit Complaint</button>
+    <p id="complaintMsg"></p>
+  </form>
+
+  <form id="resolveForm">
+    <h2>Admin: Resolve Complaint</h2>
+    <input name="complaintId" placeholder="Complaint ID (e.g., CMP-123456)" required />
+    <input name="rewardAmount" placeholder="Reward (e.g., 0.001)" required />
+    <button type="submit">Resolve & Reward</button>
+    <p id="resolveMsg"></p>
+  </form>
+
+  <script>
+    const defaultWallet = "0x4e2bdc361753bc9280204d1da0764324a427727f"; // Replace with actual or inject from MetaMask
+
+    // Submit Complaint
+    document.getElementById('complaintForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      formData.append("submitterWallet", defaultWallet); // Auto-fill wallet address
+
+      try {
+        const res = await fetch('/api/complaint', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (data.ipfsUrl) {
+          document.getElementById('complaintMsg').innerHTML = `
+            ✅ ${data.message}<br>ID: ${data.complaintId}<br>
+            📂 <a href="${data.ipfsUrl}" target="_blank">View on IPFS</a>
+          `;
+        } else {
+          document.getElementById('complaintMsg').textContent = data.message || 'Complaint submitted.';
+        }
+
+      } catch (err) {
+        document.getElementById('complaintMsg').textContent = '❌ Error submitting complaint.';
+        console.error(err);
+      }
+    });
+
+    // Resolve Complaint
+    document.getElementById('resolveForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        complaintId: form.complaintId.value,
+        rewardAmount: form.rewardAmount.value
+      };
+      try {
+        const res = await fetch('/api/admin/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('resolveMsg').textContent = data.message || '✅ Complaint resolved';
+      } catch (err) {
+        document.getElementById('resolveMsg').textContent = '❌ Error resolving complaint.';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

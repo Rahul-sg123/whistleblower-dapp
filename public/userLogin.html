@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Login - Whistleblower</title>
+</head>
+<body>
+  <h2>🔐 User Login to Submit Complaint</h2>
+
+  <form id="userLoginForm">
+    <label>Username:</label><br />
+    <input type="text" id="user" required /><br /><br />
+
+    <label>Password:</label><br />
+    <input type="password" id="pass" required /><br /><br />
+
+    <button type="submit">Login</button>
+  </form>
+
+  <script>
+    document.getElementById('userLoginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const username = document.getElementById('user').value;
+      const password = document.getElementById('pass').value;
+
+      // Simple check (you can later connect this with MongoDB for real users)
+      if (username && password) {
+        localStorage.setItem('userLoggedIn', 'true');
+        window.location.href = 'submitComplaint.html'; // redirect to complaint page
+      } else {
+        alert('❌ Invalid login');
+      }
+    });
+  </script>
+</body>
+</html>
